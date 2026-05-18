@@ -48,18 +48,42 @@ export default function AdminDashboard({ onBack }: { onBack: () => void }) {
   const handleUpload = async () => {
     if (imageFiles.length === 0 && !csvFile) return;
     setUploadStatus("uploading");
-    setUploadMsg("Uploading & segmenting leaves...");
-    const fd = new FormData();
-    imageFiles.forEach(f => fd.append("images", f));
-    if (csvFile) fd.append("dataset", csvFile);
+    
+    const BATCH_SIZE = 50;
+    const totalBatches = Math.ceil(imageFiles.length / BATCH_SIZE) || 1;
+    
+    let totalSaved = 0;
+    const finalDist: Record<string, number> = {};
+
     try {
-      const r = await fetch("/api/admin/upload-training-data", { method: "POST", body: fd });
-      if (r.ok) {
-        const d = await r.json();
-        setUploadStatus("done");
-        setUploadMsg(`${d.message || "Done"} — ${JSON.stringify(d.class_distribution || {})}`);
-      } else { throw new Error("Upload failed"); }
-    } catch { setUploadStatus("error"); setUploadMsg("Upload failed."); }
+      for (let i = 0; i < totalBatches; i++) {
+        setUploadMsg(`Processing batch ${i + 1} of ${totalBatches}... (${Math.round((i/totalBatches)*100)}%)`);
+        const batchFiles = imageFiles.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
+        
+        const fd = new FormData();
+        batchFiles.forEach(f => fd.append("images", f));
+        if (csvFile) fd.append("dataset", csvFile);
+        fd.append("append", i === 0 ? "false" : "true");
+
+        const r = await fetch("/api/admin/upload-training-data", { method: "POST", body: fd });
+        if (r.ok) {
+          const d = await r.json();
+          totalSaved += d.total_leaves || 0;
+          if (d.class_distribution) {
+            Object.keys(d.class_distribution).forEach(k => {
+              finalDist[k] = (finalDist[k] || 0) + d.class_distribution[k];
+            });
+          }
+        } else { 
+          throw new Error("Upload failed"); 
+        }
+      }
+      setUploadStatus("done");
+      setUploadMsg(`Success! Segmented & saved ${totalSaved} leaf crops.`);
+    } catch (e) { 
+      setUploadStatus("error"); 
+      setUploadMsg("Upload failed or timed out. Please try again."); 
+    }
   };
 
   // Step 2: Segment for review

@@ -5,7 +5,7 @@ Stage 2: YOLOv8s-seg (individual leaf instance segmentation)
 Stage 3: PlantVillage Disease Classifier (per-leaf disease classification)
 """
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -697,6 +697,7 @@ async def save_training_leaves(data: dict):
 async def upload_training_data(
     images: list[UploadFile] = File(None),
     dataset: UploadFile = File(None),
+    append: str = Form("false"),
 ):
     """
     Upload training images and/or CSV annotations.
@@ -721,8 +722,8 @@ async def upload_training_data(
                         label = parts[1].strip()
                         label_map[fname] = label
 
-        # Clear old training data
-        if os.path.exists(TRAINING_DIR):
+        # Clear old training data if not appending
+        if append.lower() != "true" and os.path.exists(TRAINING_DIR):
             shutil.rmtree(TRAINING_DIR)
 
         total_saved = 0
