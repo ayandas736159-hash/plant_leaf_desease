@@ -34,7 +34,7 @@ FROM python:3.11-slim
 
 # Install Node.js 20 + utilities
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl sed libgl1-mesa-glx libglib2.0-0 && \
+    apt-get install -y --no-install-recommends curl sed libgl1 libglib2.0-0 && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
     apt-get clean && \
