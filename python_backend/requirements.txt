@@ -7,6 +7,6 @@ pydantic
 torch
 torchvision
 ultralytics
-transformers
+transformers==4.38.2
 huggingface-hub
 scipy
