@@ -16,6 +16,7 @@ import base64
 import numpy as np
 import torch
 import logging
+from typing import Optional, List
 
 # --- Memory Optimization ---
 torch.set_num_threads(2)
@@ -414,7 +415,7 @@ async def analyze_vision(file: UploadFile = File(...)):
 
 
 @app.post("/extract-leaves")
-async def extract_leaves(images: list[UploadFile] = File(...)):
+async def extract_leaves(images: List[UploadFile] = File(...)):
     """
     Extract individual leaves from tree/branch images using YOLOv8s-seg.
     Returns bounding boxes for each detected leaf.
@@ -581,7 +582,7 @@ def classify_leaf_custom(image: Image.Image) -> dict:
 # ─────────────────────────────────────────────
 
 @app.post("/segment-for-training")
-async def segment_for_training(images: list[UploadFile] = File(...)):
+async def segment_for_training(images: List[UploadFile] = File(...)):
     """
     Upload whole plant/tree images. YOLOv8 segments each into individual
     leaves. Returns cropped leaf images as base64 for user to review/label.
@@ -695,8 +696,8 @@ async def save_training_leaves(data: dict):
 
 @app.post("/upload-training-data")
 async def upload_training_data(
-    images: list[UploadFile] = File(None),
-    dataset: UploadFile = File(None),
+    images: Optional[List[UploadFile]] = File(None),
+    dataset: Optional[UploadFile] = File(None),
     append: str = Form("false"),
 ):
     """
